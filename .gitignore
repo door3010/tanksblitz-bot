@@ -1,0 +1,5 @@
+datasets/
+images-for-dataset/
+runs/
+yolo-models/
+.idea/
