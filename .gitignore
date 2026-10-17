@@ -2,4 +2,7 @@ datasets/
 images-for-dataset/
 runs/
 yolo-models/
+checkpoints/
 .idea/
+__pycache__/
+*.pyc

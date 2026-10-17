@@ -6,10 +6,43 @@ import win32con
 import math
 from ultralytics import YOLO
 
-from config import AimTank
+# ================= НАСТРОЙКИ =================
+# Путь к модели
+MODEL_PATH = r"runs/segment/mle_cpu_run/weights/best.pt"
+
+# Область захвата экрана
+MONITOR = {
+    "top": 30,
+    "left": 0,
+    "width": 800,
+    "height": 410
+}
+
+# Центр экрана (для расчёта дистанции)
+CENTER_X = MONITOR["width"] // 2
+CENTER_Y = 300
+
+# Параметры прицеливания
+SMOOTHING = 0.15  # Коэффициент сглаживания (0.1-0.3)
+AIM_HEIGHT_CORR = -0.1  # Поправка на высоту (-0.2 = выше, +0.2 = ниже)
+SHOOT_DIST = 50  # Дистанция для авто-выстрела (пикселей от центра)
+AUTO_SHOOT = True  # Включить авто-стрельбу
+
+# Параметры детекции
+CONFIDENCE_THRESHOLD = 0.5
+IOU_THRESHOLD = 0.45
+
+print("=" * 50)
+print("Tanks Blitz Aimbot - Starting...")
+print(f"Monitor: {MONITOR['width']}x{MONITOR['height']}")
+print(f"Center: ({CENTER_X}, {CENTER_Y})")
+print(f"Smoothing: {SMOOTHING}")
+print(f"Auto-shoot distance: {SHOOT_DIST}px")
+print("Press 'q' to quit")
+print("=" * 50)
 
 # Загрузка модели
-model = YOLO(AimTank.mle_model_path)
+model = YOLO(MODEL_PATH)
 
 
 def find_closest_target(boxes, center_x, center_y):
@@ -42,12 +75,12 @@ with mss.mss() as sct:
 
     while True:
         # 1. Захват экрана
-        sct_img = sct.grab(AimTank.monitor)
+        sct_img = sct.grab(MONITOR)
         frame = np.array(sct_img)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
 
         # 2. Детекция объектов
-        results = model(frame, verbose=False, conf=AimTank.CONFIDENCE_THRESHOLD, iou=AimTank.IOU_THRESHOLD)
+        results = model(frame, verbose=False, conf=CONFIDENCE_THRESHOLD, iou=IOU_THRESHOLD)
 
         # 3. Инициализация переменных
         aim_target = None
@@ -61,7 +94,7 @@ with mss.mss() as sct:
             if len(boxes) > 0:
                 # Найти ближайшую к центру цель
                 aim_target, closest_box, closest_dist = find_closest_target(
-                    boxes, AimTank.CENTER_X, AimTank.CENTER_Y
+                    boxes, CENTER_X, CENTER_Y
                 )
 
         # 5. Прицеливание и стрельба
@@ -71,12 +104,12 @@ with mss.mss() as sct:
 
             # Рассчитать смещение от текущего положения
             # (win32api.mouse_event с MOUSEEVENTF_MOVE использует относительные координаты)
-            offset_x = tx - AimTank.CENTER_X
-            offset_y = ty - AimTank.CENTER_Y
+            offset_x = tx - CENTER_X
+            offset_y = ty - CENTER_Y
 
             # Применить сглаживание
-            move_x = int(offset_x * AimTank.SMOOTHING)
-            move_y = int(offset_y * AimTank.SMOOTHING)
+            move_x = int(offset_x * SMOOTHING)
+            move_y = int(offset_y * SMOOTHING)
 
             # Движение мыши через Windows API
             if move_x != 0 or move_y != 0:
@@ -88,7 +121,7 @@ with mss.mss() as sct:
                 )
 
             # Авто-выстрел если цель достаточно близко к центру
-            if AimTank.AUTO_SHOOT and closest_dist < AimTank.SHOOT_DIST:
+            if AUTO_SHOOT and closest_dist < SHOOT_DIST:
                 win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0)
                 win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0)
                 # Небольшая задержка между выстрелами (опционально)
@@ -101,19 +134,19 @@ with mss.mss() as sct:
             cv2.circle(frame, (tx, ty), 5, (0, 0, 255), -1)
 
             # Отрисовка линии от центра к цели
-            cv2.line(frame, (AimTank.CENTER_X, AimTank.CENTER_Y), (tx, ty), (0, 255, 255), 1)
+            cv2.line(frame, (CENTER_X, CENTER_Y), (tx, ty), (0, 255, 255), 1)
 
             # Информация о цели
             cv2.putText(frame, f"Dist: {closest_dist:.1f}px", (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-            if closest_dist < AimTank.SHOOT_DIST:
-                cv2.putText(frame, "SHOOTING!", (AimTank.CENTER_X - 50, AimTank.CENTER_Y - 20),
+            if closest_dist < SHOOT_DIST:
+                cv2.putText(frame, "SHOOTING!", (CENTER_X - 50, CENTER_Y - 20),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
 
         # 6. Отрисовка центра прицела
-        cv2.circle(frame, (AimTank.CENTER_X, AimTank.CENTER_Y), 3, (255, 255, 255), -1)
-        cv2.circle(frame, (AimTank.CENTER_X, AimTank.CENTER_Y), 10, (255, 255, 255), 1)
+        cv2.circle(frame, (CENTER_X, CENTER_Y), 3, (255, 255, 255), -1)
+        cv2.circle(frame, (CENTER_X, CENTER_Y), 10, (255, 255, 255), 1)
 
         # 7. Отображение FPS и информации
         fps_text = f"FPS: {1000 / (cv2.getTickCount() / (cv2.getTickFrequency() + 0.001)):.1f}"
