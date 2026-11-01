@@ -38,6 +38,22 @@ pip install -r requirements.txt
 
 Run `python tools/check_dependencies.py` to verify the environment.
 
+## Datasets
+
+The training data and captured screenshots are not committed to the repository.
+Download the archives and extract them at the project root:
+
+| Archive | Contents | Extract to |
+|---|---|---|
+| [datasets.zip](https://drive.google.com/file/d/1Xe_GmfW6BVK3BN1Op5cx4NYkq0DhnZjd/view?usp=sharing) | YOLO datasets: `arrow`, `buildings-set`, `e5`, `fixed-classes` | `datasets/` |
+| [images-for-dataset.zip](https://drive.google.com/file/d/17_izWDna1cXgpmGC6yWl_plxETChuAeK/view?usp=sharing) | Captured screenshots: `minimap-player`, `tank-player` | `images-for-dataset/` |
+
+Both directories are listed in `.gitignore`. The maze source image
+`true-bw-minimap.png` is already included in the repository.
+
+Model weights are not included either; `tanksbot/config.py` expects them under
+`runs/segment/<run>/weights/best.pt`.
+
 ## Usage
 
 | Script | Purpose |
