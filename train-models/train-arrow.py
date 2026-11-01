@@ -1,11 +1,15 @@
+from pathlib import Path
+
 from ultralytics import YOLO
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
 # 1. Load the TRUE NANO segmentation model (3.2M parameters, perfect for CPU)
-model = YOLO(r'C:\Users\AlexAD\Desktop\AI_vision\local-yolo-models\yolov8m-seg.pt')
+model = YOLO(str(PROJECT_ROOT / "yolo-models" / "yolov8m-seg.pt"))
 
 # 2. Train with CPU-optimized, small-dataset settings
 results = model.train(
-    data=r'C:\Users\AlexAD\Desktop\AI_vision\arrow\data.yaml',
+    data=str(PROJECT_ROOT / "datasets" / "arrow" / "data.yaml"),
     epochs=50,
     imgsz=224,  # Fixed: 224 is a multiple of 32 (optimal for YOLO stride)
     batch=4,  # Reduced to 4 for faster CPU iteration with the Nano model
